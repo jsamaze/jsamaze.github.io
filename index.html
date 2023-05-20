@@ -147,7 +147,7 @@
                             break;
                     }
                     console.log(head);
-                    this.in_array(head,this.snake) ? undefined : this.direction = desired_direction;
+                    this.in_array(head,[this.snake[this.snake.length-2]]) ? undefined : this.direction = desired_direction;
                 },
                 
                 game_loop : function (){
@@ -177,7 +177,7 @@
                         this.replace_apple()
                     }
 
-                    if (head[0] < 0 || head[0] >= this.GRID_WIDTH || head[1] < 0 || head[1] >= this.GRID_HEIGHT){
+                    if (head[0] < 0 || head[0] >= this.GRID_WIDTH || head[1] < 0 || head[1] >= this.GRID_HEIGHT || this.in_array(head,this.snake.slice(0,this.snake.length-1))){
                         this.end=true;
                         this.snake = [];
                         this.apple=[];
