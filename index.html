@@ -186,6 +186,7 @@
                 },
 
                 update_interval : function(){
+                    clearInterval(this.timer_id)
                     this.timer_id = setInterval(() => {
                     if (!this.end){
                         this.game_loop();
