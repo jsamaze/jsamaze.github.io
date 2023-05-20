@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake - Joshua Sumarlin</title>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        td.apple {
+            background-color: crimson;
+        }
+        td.snake {
+            background-color:forestgreen;
+        }
+        td {
+            width : 2%;
+            padding : 2%
+        }
+        table.game_area {
+            width : 100%;
+            border-collapse:collapse;
+        }
+
+        .game_area table, .game_area td {
+            border:1px solid;
+        }
+
+        div {
+            display:inline;
+        }
+        .control td {
+            width : 33%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id = "root"> 
+        <table>
+            <tr>
+                <td style="width: 3%">
+                    <table class="game_area">
+                        <tr v-for="row in class_2d_arr">
+                            <td v-for="box in row" v-bind:class="box" >
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td>
+                    <h1 style="color:red" v-if="end"> Game end! <br>Please refresh page to replay</h1>
+                    <!-- <h1>Direction : {{ direction }}</h1> -->
+                    <h1>Score : {{ score }}</h1>
+                    Refresh rate : <input type="text" v-model="refresh_rate" > ms 
+                    <button @click="refresh_rate_check();update_interval()">Change</button><br><br>
+                    <table class="control">
+                        <tr>
+                            <td></td>
+                            <td><button @click="change_direction('Up')">Up</button></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><button @click="change_direction('Left')">Left</button></td>
+                            <td></td>
+                            <td><button @click="change_direction('Right')">Right</button></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><button @click="change_direction('Down')">Down</button></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <script>
+
+
+
+
+        const { createApp } = Vue
+
+        document.app = createApp({   // Must be tagged to document to be directly modifiable (data)
+
+            data() { return {
+                timer_id:null,
+                snake: [[1,10],[2,10]],
+                apple : [[-5,-5]],  // must be 2d for programming reasons
+                GRID_HEIGHT : 20,
+                GRID_WIDTH : 20,
+                MAX_REFRESH_RATE : 1000,
+                direction : "Right",
+                score : 0,
+                end:false,
+                refresh_rate : 1000
+            }},
+
+            methods: {
+                css_colour: function(x,y) {
+                    if (this.in_array([x,y],this.snake)){
+                        return "snake"
+                    }
+                    else if (this.in_array([x,y],this.apple)){
+                        return "apple"
+                    } else {
+                        return ""
+                    }
+                },
+
+                in_array : function (needle, haystack){
+                    var str_needle = JSON.stringify(needle);
+
+                    var found = haystack.some(function(element){
+                        return JSON.stringify(element) === str_needle;
+                    });
+                    return found;
+                },
+
+                replace_apple : function () {
+                    apple_position = this.snake[0];
+                    while (this.in_array(apple_position,this.apple) || this.in_array(apple_position,this.snake)){
+                        apple_x = Math.floor(Math.random()*(this.GRID_WIDTH-1));
+                        apple_y = Math.floor(Math.random()*(this.GRID_HEIGHT-1));
+                        apple_position=[apple_x,apple_y];
+                    }
+                    this.apple = [apple_position]
+
+                },
+
+                change_direction : function (desired_direction){
+                    head = this.snake[this.snake.length-1].slice(0,2); // if i dont slice, the actual snake head moves
+                    switch(desired_direction){
+                        case "Up":
+                            head[1]--;
+                            break;
+                        case "Down":
+                            head[1]++;
+                            break;
+                        case "Right":
+                            head[0]++;
+                            break;
+                        case "Left":
+                            head[0]--;
+                            break;
+                    }
+                    console.log(head);
+                    this.in_array(head,this.snake) ? undefined : this.direction = desired_direction;
+                },
+                
+                game_loop : function (){
+                    // Step 1 : determine position of next head
+                    head = this.snake[this.snake.length-1].slice(0,2); // if i dont slice, the actual snake head moves
+                    switch(this.direction){
+                        case "Up":
+                            head[1]--;
+                            break;
+                        case "Down":
+                            head[1]++;
+                            break;
+                        case "Right":
+                            head[0]++;
+                            break;
+                        case "Left":
+                            head[0]--;
+                            break;
+                    }
+                    console.log(head[1] < 0 );
+                    // Step 2 : determine snake state : hit wall/eat apple
+                    this.snake.push(head);
+                    if (!this.in_array(head,this.apple)){
+                        this.snake.shift()
+                    } else {
+                        this.score++
+                        this.replace_apple()
+                    }
+
+                    if (head[0] < 0 || head[0] >= this.GRID_WIDTH || head[1] < 0 || head[1] >= this.GRID_HEIGHT){
+                        this.end=true;
+                        this.snake = [];
+                        this.apple=[];
+                    }
+
+                },
+
+                update_interval : function(){
+                    this.timer_id = setInterval(() => {
+                    if (!this.end){
+                        this.game_loop();
+                    }
+                },this.refresh_rate)
+                },
+
+                refresh_rate_check : function(){
+                    if (this.refresh_rate > this.MAX_REFRESH_RATE){
+                        this.refresh_rate = this.MAX_REFRESH_RATE;
+                    }
+                }
+                
+
+            }
+
+            , computed: {
+                class_2d_arr() {
+                    result = [];
+                    for (let y = 0; y <this.GRID_HEIGHT; y++){
+                        row=[];
+                        for (let x = 0; x <this.GRID_HEIGHT; x++){
+                            row.push(this.css_colour(x,y));
+                        }
+                        result.push(row);
+                    }
+                    console.log(result[1][1]);
+                    return result
+                }
+            }
+            
+            ,mounted() {
+                // console.log(this.snake);
+                // console.log(this.in_array([1,1],this.snake));
+                this.replace_apple();
+                this.update_interval();
+            }
+
+            ,beforeUnmount() {
+                clearInterval(this.timer_id)
+            }
+
+            
+
+        }).mount('#root')
+    </script>
+
+</body>
+</html>
